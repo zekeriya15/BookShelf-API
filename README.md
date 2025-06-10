@@ -25,7 +25,7 @@ Follow these steps to get your BookShelf API operational.
 1.  **Get the Project Files:**
     Download or clone this project to your local machine. Navigate into the project's root directory in your terminal.
 
-2.  **Create & Activate Virtual Environment:**
+2.  **Create & Activate Virtual Environment: (optional)**
     ```bash
     python -m venv myenv
     # Windows: myenv\Scripts\activate
