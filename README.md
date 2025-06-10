@@ -93,10 +93,12 @@ Refer to the `main.py` file for a detailed list of all API routes and their HTTP
 
 ## Project Structure
 
+```
 BookShelf-API/
 ├── .env
 ├── .gitignore
 ├── main.py
 ├── requirements.txt
 └── static/
-└── uploads/ (for uploaded images)
+    └── uploads/ (for uploaded images)
+```
