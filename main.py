@@ -5,6 +5,8 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 
+load_dotenv()
+
 # create an instance
 app = Flask(__name__)
 CORS(app)
@@ -155,7 +157,7 @@ def get_reading(reading_id):
 
     return jsonify(reading.to_dict())
 
- 
+
 # (POST) https://www.bookshelf.com/readings
 @app.route('/readings', methods=['POST'])
 def add_reading():
@@ -164,8 +166,7 @@ def add_reading():
         return jsonify(error_data), status_code
 
     # use multipart/form-data -> image + form fields
-    image = request.files.get('image')  # .get() if theres no file then None
-    # image = request.files['image']
+    image = request.files.get('image')
 
     title = request.form.get('title')
     author = request.form.get('author')
@@ -175,21 +176,11 @@ def add_reading():
     if not all([title, author, genre, pages]):
         return jsonify({'status': 'error',
                         'message': 'Missing fields'}), 400
-    
-    # web_path = None
-    image_path = None
-    if image and image.filename:
-        if allowed_file(image.filename):
-            index = Reading.query.filter_by(owner_email=email).count()
-            image_path = save_image(image, email, index)
-        else:
-            return jsonify({'status': 'error',
-                            'message': 'Invalid image format (only JPG, JPEG, PNG allowed)'}), 400
 
-    # insert to db
+
     reading = Reading(
         owner_email=email,
-        image_path=image_path,
+        image_path=None,  
         title=title,
         author=author,
         genre=genre,
@@ -200,7 +191,20 @@ def add_reading():
     )
 
     db.session.add(reading)
-    db.session.commit()
+    db.session.flush()  # this gives us the id without committing
+
+    # now handle the image with the actual reading ID
+    image_path = None
+    if image and image.filename:
+        if allowed_file(image.filename):
+            image_path = save_image(image, email, reading.id)  # use the actual ID
+            reading.image_path = image_path  # update the record
+        else:
+            db.session.rollback()  # Rollback if image is invalid
+            return jsonify({'status': 'error',
+                            'message': 'Invalid image format (only JPG, JPEG, PNG allowed)'}), 400
+
+    db.session.commit()  # Commit everything
 
     return jsonify({'status': 'success', 'id': reading.id}), 201
 
@@ -237,19 +241,26 @@ def update_reading(reading_id):
     if pages is not None: reading.pages = pages
     if current_page is not None: reading.current_page = current_page
 
-    # handle new image
+    # handle new image or removal
     if 'image' in request.files:
         image = request.files['image']
         if image and image.filename:
+            # new image provided: validate, delete old, save new
             if allowed_file(image.filename):
-                # if old image exist, delete
-                delete_image_file(reading.image_path)
+                if reading.image_path: # delete old image if it exists
+                    delete_image_file(reading.image_path)
 
-                index = Reading.query.filter_by(owner_email=email).count()
-                reading.image_path = save_image(image, email, index)
+                # se the reading id as the index for updates
+                reading.image_path = save_image(image, email, reading_id)
             else:
                 return jsonify({'status': 'error', 
                                 'message': 'Invalid image format'}), 400
+            
+        else: # 'image' field was sent, but the filename is empty (user cleared selection)
+            if reading.image_path: # if an old image exists, delete it
+                delete_image_file(reading.image_path)
+            reading.image_path = None
+    # else: 'image' field was not even sent in the request, so image path remains unchanged
 
     reading.date_modified = datetime.now()
     db.session.commit()
@@ -350,6 +361,10 @@ def delete_soft_deleted_readings():
 
     return jsonify({'status': 'success',
                     'message': 'Deleted all Readings in trash'})
+
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
