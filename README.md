@@ -19,7 +19,6 @@ Follow these steps to get your BookShelf API operational.
     ```sql
     CREATE DATABASE bookshelf CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     ```
-    Ensure the MySQL user you intend to use (e.g., `phpmyadmin` from your screenshot) has permissions to access this `bookshelf` database.
 
 ### 2. Project Setup
 
@@ -51,8 +50,8 @@ Follow these steps to get your BookShelf API operational.
     In the project root, create a file named `.env` and add your MySQL connection details.
     **Example `.env` content (based on your screenshot):**
     ```
-    MYSQL_USER=phpmyadmin
-    MYSQL_PASSWORD= # Leave empty if your phpmyadmin user has no password
+    MYSQL_USER=root
+    MYSQL_PASSWORD= # Leave empty if your root user has no password
     MYSQL_HOST=localhost
     MYSQL_PORT=3306
     MYSQL_DB=bookshelf
@@ -66,7 +65,9 @@ With your virtual environment active and `.env` configured, run the Flask applic
 * **Using Flask CLI (Recommended for Development):**
     ```bash
     # Windows Command Prompt:
-    set FLASK_APP=main.py
+    flask --app main run
+    # or
+    $env:FLASK_APP="main.py"
     flask run
 
     # Windows PowerShell:
@@ -91,3 +92,11 @@ Your application will connect to the MySQL database and create the necessary tab
 Refer to the `main.py` file for a detailed list of all API routes and their HTTP methods (GET, POST, PUT, PATCH, DELETE).
 
 ## Project Structure
+
+BookShelf-API/
+├── .env
+├── .gitignore
+├── main.py
+├── requirements.txt
+└── static/
+└── uploads/ (for uploaded images)
